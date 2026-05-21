@@ -748,47 +748,44 @@ function Messages() {
                             )
 
                             const planLabel = (p) => {
-                              if (p === 'full')      return { label: 'Full Payment', icon: '⚡', amt: baseAmt }
-                              if (p === 'splithalf') return { label: 'Half (50%)',   icon: '✂️', amt: Math.round(baseAmt * 0.5 * 100) / 100 }
+                              if (p === 'full')      return { label: 'Full',     amt: baseAmt }
+                              if (p === 'splithalf') return { label: 'Half',     amt: Math.round(baseAmt * 0.5 * 100) / 100 }
                               const m = p.match(/^(weekly|biweekly)(\d+)$/)
                               if (m) {
                                 const n = parseInt(m[2], 10)
                                 const inst = Math.round((baseAmt / n) * 100) / 100
                                 return m[1] === 'biweekly'
-                                  ? { label: `Bi-weekly (${n} parts)`, icon: '📅', amt: inst }
-                                  : { label: `Weekly (${n} parts)`,    icon: '🗓️', amt: inst }
+                                  ? { label: `Bi-weekly`, amt: inst }
+                                  : { label: `Weekly`,    amt: inst }
                               }
-                              return { label: p, icon: '💳', amt: baseAmt }
+                              return { label: p, amt: baseAmt }
                             }
 
                             return (
-                              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
                                 {plans.length > 0 && (
-                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 1 }}>
                                     Choose a plan
                                   </div>
                                 )}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                   {plans.map(p => {
-                                    const { label, icon, amt } = planLabel(p)
+                                    const { label, amt } = planLabel(p)
                                     return (
                                       <Link
                                         key={p}
                                         to={`/dashboard/checkout?orderId=${orderId}&plan=${p}`}
                                         style={{
-                                          display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                          padding: '10px 16px', borderRadius: 10,
-                                          background: 'linear-gradient(135deg, #16A34A, #15803d)',
+                                          display: 'inline-flex', flexDirection: 'column', alignItems: 'center',
+                                          padding: '7px 14px', borderRadius: 8,
+                                          background: '#16A34A',
                                           color: 'white', textDecoration: 'none',
-                                          fontWeight: 700, fontSize: 13, flex: '1 1 120px',
-                                          boxShadow: '0 3px 10px rgba(22,163,74,0.3)', textAlign: 'center'
+                                          fontWeight: 700, fontSize: 12,
+                                          whiteSpace: 'nowrap', lineHeight: 1.3
                                         }}
                                       >
-                                        <span style={{ fontSize: 16, marginBottom: 2 }}>{icon}</span>
                                         <span>{label}</span>
-                                        <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>
-                                          ${amt.toFixed(2)} first
-                                        </span>
+                                        <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.8 }}>${amt.toFixed(2)}</span>
                                       </Link>
                                     )
                                   })}
