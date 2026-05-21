@@ -48,7 +48,24 @@ function Dashboard() {
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
     .slice(0, 3)
 
-  const monthlyData = data.spending?.monthly || []
+  const paidOrders = orders.filter(o => (o.paid_amount || 0) > 0)
+  const totalSpent = paidOrders.reduce((sum, o) => sum + (o.paid_amount || 0), 0)
+  const avgOrderValue = paidOrders.length > 0 ? totalSpent / paidOrders.length : 0
+  const subjectCounts = {}
+  paidOrders.forEach(o => { if (o.subject) subjectCounts[o.subject] = (subjectCounts[o.subject] || 0) + 1 })
+  const topSubject = Object.entries(subjectCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
+  const now = new Date()
+  const monthlyData = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    const month = d.toLocaleString('en-US', { month: 'short' })
+    const amount = Math.round(paidOrders
+      .filter(o => {
+        const date = new Date(o.updated_at || o.created_at)
+        return date.getFullYear() === d.getFullYear() && date.getMonth() === d.getMonth()
+      })
+      .reduce((sum, o) => sum + (o.paid_amount || 0), 0) * 100) / 100
+    return { month, amount }
+  })
   const maxSpend = Math.max(...monthlyData.map(m => m.amount), 1)
   const hasSpendingData = monthlyData.some(m => m.amount > 0)
 
@@ -298,7 +315,7 @@ function Dashboard() {
           <div className="sp-card-header">
             <h3 className="sp-card-title">📊 Spending Insights</h3>
             <span style={{ fontSize: '13px', color: 'var(--sp-muted)' }}>
-              Total: <strong style={{ color: 'var(--sp-primary)' }}>${data.spending?.totalSpent.toFixed(2) || '0.00'}</strong>
+              Total: <strong style={{ color: 'var(--sp-primary)' }}>${totalSpent.toFixed(2)}</strong>
             </span>
           </div>
 
@@ -324,13 +341,13 @@ function Dashboard() {
                 <div>
                   <div style={{ fontSize: '12px', color: 'var(--sp-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Avg Order Value</div>
                   <div style={{ fontFamily: 'var(--sp-font-display)', fontSize: '22px', fontWeight: 700, color: 'var(--sp-primary)', marginTop: '4px' }}>
-                    ${data.spending?.avgOrderValue?.toFixed(2) || '0.00'}
+                    ${avgOrderValue.toFixed(2)}
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize: '12px', color: 'var(--sp-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Top Subject</div>
                   <div style={{ fontFamily: 'var(--sp-font-display)', fontSize: '22px', fontWeight: 700, color: 'var(--sp-primary)', marginTop: '4px' }}>
-                    {data.spending?.topSubject || 'N/A'}
+                    {topSubject}
                   </div>
                 </div>
               </div>
