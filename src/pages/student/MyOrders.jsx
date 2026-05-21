@@ -228,15 +228,21 @@ function MyOrders() {
                   <tr style={{ background: 'var(--sp-surface)' }}>
                     <th style={thStyle}>Order ID</th>
                     <th style={thStyle}>Subject</th>
-                    <th style={thStyle}>Type</th>
-                    <th style={thStyle}>Words</th>
                     <th style={thStyle}>Deadline</th>
                     <th style={thStyle}>Status</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Price</th>
+                    <th style={{ ...thStyle, textAlign: 'center' }}>Payment</th>
                     <th style={thStyle}></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map((order) => (
+                  {filteredOrders.map((order) => {
+                    const fullPrice  = Number(order.price) || 0
+                    const paid       = Number(order.paid_amount) || 0
+                    const remaining  = Math.max(0, Math.round((fullPrice - paid) * 100) / 100)
+                    const isPaid     = order.payment_status === 'paid'
+                    const hasPartial = paid > 0 && !isPaid
+                    return (
                     <tr
                       key={order.id}
                       className="sp-table-row-clickable"
@@ -264,17 +270,78 @@ function MyOrders() {
                           </div>
                         )}
                       </td>
-                      <td style={tdStyle}>{order.type}</td>
-                      <td style={tdStyle}>
-                        <span style={{ fontSize: '13px' }}>
-                          {order.word_count?.toLocaleString() || '—'}
-                        </span>
-                      </td>
                       <td style={tdStyle}>{formatDate(order.deadline)}</td>
                       <td style={tdStyle}>
                         <span className={`sp-status-badge ${order.status}`}>
                           ● {order.status}
                         </span>
+                      </td>
+                      {/* Price column */}
+                      <td style={{ ...tdStyle, textAlign: 'center', minWidth: 110 }}>
+                        {fullPrice === 0 ? (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                            <span style={{
+                              width: 18, height: 18, border: '2.5px solid var(--sp-green)',
+                              borderTopColor: 'transparent', borderRadius: '50%',
+                              display: 'inline-block', animation: 'spin 0.8s linear infinite'
+                            }} />
+                            <span style={{ color: 'var(--sp-amber)', fontWeight: 600, fontSize: 13 }}>Calculating...</span>
+                          </div>
+                        ) : (
+                          <div style={{ lineHeight: 1.4 }}>
+                            {hasPartial && (
+                              <div style={{ textDecoration: 'line-through', color: 'var(--sp-muted)', fontSize: 12 }}>
+                                $ {fullPrice.toFixed(2)}
+                              </div>
+                            )}
+                            <div style={{
+                              fontWeight: 700,
+                              fontSize: 15,
+                              color: isPaid ? 'var(--sp-green)' : 'var(--sp-primary)'
+                            }}>
+                              $ {isPaid ? fullPrice.toFixed(2) : (hasPartial ? remaining.toFixed(2) : fullPrice.toFixed(2))}
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                      {/* Payment column */}
+                      <td style={{ ...tdStyle, textAlign: 'center', minWidth: 160 }} onClick={e => e.stopPropagation()}>
+                        {isPaid ? (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '6px 16px',
+                            background: 'var(--sp-green-light)',
+                            color: 'var(--sp-green)',
+                            borderRadius: 8,
+                            fontWeight: 700,
+                            fontSize: 13,
+                          }}>
+                            PAID
+                          </span>
+                        ) : fullPrice === 0 ? (
+                          <span style={{ color: 'var(--sp-muted)', fontSize: 13 }}>—</span>
+                        ) : (
+                          <button
+                            onClick={() => navigate(`/dashboard/checkout?orderId=${order.id}`)}
+                            style={{
+                              background: 'var(--sp-green)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 8,
+                              padding: '8px 14px',
+                              fontWeight: 700,
+                              fontSize: 13,
+                              cursor: 'pointer',
+                              lineHeight: 1.3,
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'var(--sp-green-dark)' }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'var(--sp-green)' }}
+                          >
+                            PAY <span style={{ color: '#bbf7d0' }}>{remaining.toFixed(2)} USD</span><br/>
+                            <span style={{ fontWeight: 500, fontSize: 11, opacity: 0.9 }}>to finish</span>
+                          </button>
+                        )}
                       </td>
                       <td style={tdStyle}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -314,14 +381,21 @@ function MyOrders() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* ── MOBILE CARDS (≤640px) ── */}
             <div className="mo-cards">
-              {filteredOrders.map((order) => (
+              {filteredOrders.map((order) => {
+                const fullPrice = Number(order.price) || 0
+                const paid      = Number(order.paid_amount) || 0
+                const remaining = Math.max(0, Math.round((fullPrice - paid) * 100) / 100)
+                const isPaid    = order.payment_status === 'paid'
+                const hasPartial = paid > 0 && !isPaid
+                return (
                 <div
                   key={order.id}
                   className="mo-card"
@@ -346,12 +420,23 @@ function MyOrders() {
                   {/* Meta grid */}
                   <div className="mo-card-meta">
                     <div className="mo-card-meta-item">
-                      <span className="mo-card-meta-label">Type</span>
-                      <span className="mo-card-meta-value">{order.type || '—'}</span>
-                    </div>
-                    <div className="mo-card-meta-item">
-                      <span className="mo-card-meta-label">Words</span>
-                      <span className="mo-card-meta-value">{order.word_count?.toLocaleString() || '—'}</span>
+                      <span className="mo-card-meta-label">Price</span>
+                      <span className="mo-card-meta-value">
+                        {fullPrice === 0 ? (
+                          <span style={{ color: 'var(--sp-amber)', fontSize: 12 }}>Calculating...</span>
+                        ) : (
+                          <>
+                            {hasPartial && (
+                              <span style={{ textDecoration: 'line-through', color: 'var(--sp-muted)', fontSize: 11, marginRight: 4 }}>
+                                ${fullPrice.toFixed(2)}
+                              </span>
+                            )}
+                            <span style={{ fontWeight: 700, color: isPaid ? 'var(--sp-green)' : 'var(--sp-primary)' }}>
+                              ${isPaid ? fullPrice.toFixed(2) : (hasPartial ? remaining.toFixed(2) : fullPrice.toFixed(2))}
+                            </span>
+                          </>
+                        )}
+                      </span>
                     </div>
                     <div className="mo-card-meta-item mo-card-meta-full">
                       <span className="mo-card-meta-label">Deadline</span>
@@ -361,9 +446,30 @@ function MyOrders() {
 
                   {/* Footer */}
                   <div className="mo-card-footer">
-                    <button className="sp-btn sp-btn-secondary" style={{ fontSize: '13px', padding: '6px 16px' }}>
-                      View Order
-                    </button>
+                    {isPaid ? (
+                      <span style={{
+                        padding: '6px 16px',
+                        background: 'var(--sp-green-light)',
+                        color: 'var(--sp-green)',
+                        borderRadius: 8, fontWeight: 700, fontSize: 13
+                      }}>PAID</span>
+                    ) : fullPrice > 0 ? (
+                      <button
+                        onClick={e => { e.stopPropagation(); navigate(`/dashboard/checkout?orderId=${order.id}`) }}
+                        style={{
+                          background: 'var(--sp-green)', color: 'white',
+                          border: 'none', borderRadius: 8,
+                          padding: '8px 16px', fontWeight: 700,
+                          fontSize: 13, cursor: 'pointer'
+                        }}
+                      >
+                        PAY {remaining.toFixed(2)} USD
+                      </button>
+                    ) : (
+                      <button className="sp-btn sp-btn-secondary" style={{ fontSize: '13px', padding: '6px 16px' }}>
+                        View Order
+                      </button>
+                    )}
                     {orderUnreads[order.id] > 0 && (
                       <span className="mo-card-unread">
                         {orderUnreads[order.id]} new msg{orderUnreads[order.id] > 1 ? 's' : ''}
@@ -383,7 +489,8 @@ function MyOrders() {
                     )}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}
