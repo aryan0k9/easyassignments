@@ -861,7 +861,10 @@ function OrderDetail() {
                   <div>
                     <div style={{ fontSize: 10, fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>✅ Assigned Expert</div>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#0f172a' }}>{order.expert_name}</div>
-                    <div style={{ fontSize: 12, color: '#4ade80', fontWeight: 600, marginTop: 1 }}>Working on your order</div>
+                    {order.status === 'pending'   && <div style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600, marginTop: 1 }}>Getting ready for your order</div>}
+                    {order.status === 'in_review' && <div style={{ fontSize: 12, color: '#7c3aed', fontWeight: 600, marginTop: 1 }}>Reviewing your requirements</div>}
+                    {order.status === 'active'    && <div style={{ fontSize: 12, color: '#16a34a', fontWeight: 600, marginTop: 1 }}>Working on your order</div>}
+                    {order.status === 'completed' && <div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600, marginTop: 1 }}>Order completed</div>}
                   </div>
                 </div>
               ) : (
