@@ -238,7 +238,7 @@ function NewOrder() {
       setSubmitting(false)
 
       setTimeout(() => {
-        navigate('/dashboard/orders')
+        navigate(`/dashboard/messages?orderId=${result.order.id}`)
       }, 5000)
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
@@ -336,8 +336,8 @@ function NewOrder() {
             </div>
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button className="sp-btn sp-btn-primary" onClick={() => navigate('/dashboard/orders')}>
-                View My Orders →
+              <button className="sp-btn sp-btn-primary" onClick={() => navigate(`/dashboard/messages?orderId=${success.id}`)}>
+                Go to Messages →
               </button>
               <button className="sp-btn sp-btn-secondary" onClick={() => {
                 setSuccess(null)
