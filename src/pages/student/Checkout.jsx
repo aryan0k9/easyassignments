@@ -472,15 +472,10 @@ export default function Checkout() {
                 const pct   = Math.round((1 - offer / orig) * 100)
                 const saved = round2(orig - offer)
                 return (
-                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 12, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <Info size={18} fill="#12B159" stroke="white" strokeWidth={2} />
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#003b19', letterSpacing: '-0.01em', textTransform: 'uppercase' }}>
-                        {pct}% OFF PROMO APPLIED
-                      </span>
-                    </div>
-                    <span style={{ fontFamily: 'monospace', fontSize: 10, letterSpacing: '0.18em', background: 'white', border: '1px solid #a7f3d0', color: '#12B159', padding: '4px 8px', borderRadius: 6, fontWeight: 700, textTransform: 'uppercase', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
-                      SAVE${saved.toFixed(2)}
+                  <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: 12, padding: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Info size={18} fill="#12B159" stroke="white" strokeWidth={2} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#003b19', letterSpacing: '-0.01em', textTransform: 'uppercase' }}>
+                      {pct}% OFF PROMO APPLIED
                     </span>
                   </div>
                 )
