@@ -311,44 +311,73 @@ function Dashboard() {
 
       {/* Spending Chart + Referral */}
       <div className="sp-dash-bottom-grid">
-        <div className="sp-card">
-          <div className="sp-card-header">
-            <h3 className="sp-card-title">📊 Spending Insights</h3>
-            <span style={{ fontSize: '13px', color: 'var(--sp-muted)' }}>
-              Total: <strong style={{ color: 'var(--sp-primary)' }}>${totalSpent.toFixed(2)}</strong>
-            </span>
+        <div className="sp-card" style={{ overflow: 'hidden' }}>
+          {/* Header */}
+          <div style={{ padding: '20px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Finance</div>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>Spending Insights</h3>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Spent</div>
+              <div style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>${totalSpent.toFixed(2)}</div>
+            </div>
           </div>
 
           {!hasSpendingData ? (
-            <div className="sp-empty" style={{ padding: '60px 24px' }}>
-              <div className="sp-empty-icon">📊</div>
-              <h4>No spending data yet</h4>
-              <p>Place your first order to see spending insights here.</p>
+            <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ width: 56, height: 56, borderRadius: '16px', background: 'linear-gradient(135deg,#dcfce7,#bbf7d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>📊</div>
+              <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>No spending data yet</h4>
+              <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Make your first payment to see insights here.</p>
             </div>
           ) : (
-            <div className="sp-chart-card">
-              <div className="sp-chart-bars">
-                {monthlyData.map((m, i) => (
-                  <div key={i} className="sp-chart-bar-wrap">
-                    <div className="sp-chart-bar" style={{ height: `${(m.amount / maxSpend) * 100}%` }}>
-                      <span className="sp-chart-bar-value">${m.amount}</span>
+            <div style={{ padding: '24px 24px 0' }}>
+              {/* Bar chart */}
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '120px', marginBottom: '8px' }}>
+                {monthlyData.map((m, i) => {
+                  const pct = m.amount > 0 ? Math.max((m.amount / maxSpend) * 100, 8) : 0
+                  const isMax = m.amount === maxSpend && m.amount > 0
+                  return (
+                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', height: '100%', justifyContent: 'flex-end' }}>
+                      {m.amount > 0 && (
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: isMax ? '#16a34a' : '#64748b' }}>${m.amount}</span>
+                      )}
+                      <div style={{
+                        width: '100%',
+                        height: m.amount > 0 ? `${pct}%` : '3px',
+                        borderRadius: m.amount > 0 ? '6px 6px 4px 4px' : '2px',
+                        background: m.amount > 0
+                          ? isMax
+                            ? 'linear-gradient(180deg, #16a34a 0%, #15803d 100%)'
+                            : 'linear-gradient(180deg, #4ade80 0%, #22c55e 100%)'
+                          : '#e2e8f0',
+                        boxShadow: isMax ? '0 4px 12px rgba(22,163,74,0.35)' : 'none',
+                        transition: 'height 0.4s ease',
+                      }} />
                     </div>
-                    <div className="sp-chart-bar-label">{m.month}</div>
-                  </div>
+                  )
+                })}
+              </div>
+              {/* Month labels */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                {monthlyData.map((m, i) => (
+                  <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#94a3b8' }}>{m.month}</div>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--sp-border)' }}>
-                <div>
-                  <div style={{ fontSize: '12px', color: 'var(--sp-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Avg Order Value</div>
-                  <div style={{ fontFamily: 'var(--sp-font-display)', fontSize: '22px', fontWeight: 700, color: 'var(--sp-primary)', marginTop: '4px' }}>
-                    ${avgOrderValue.toFixed(2)}
-                  </div>
+
+              {/* Stats row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderTop: '1px solid #f1f5f9', paddingTop: '16px', paddingBottom: '20px' }}>
+                <div style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Orders Paid</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>{paidOrders.length}</div>
                 </div>
-                <div>
-                  <div style={{ fontSize: '12px', color: 'var(--sp-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Top Subject</div>
-                  <div style={{ fontFamily: 'var(--sp-font-display)', fontSize: '22px', fontWeight: 700, color: 'var(--sp-primary)', marginTop: '4px' }}>
-                    {topSubject}
-                  </div>
+                <div style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Avg Value</div>
+                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#16a34a' }}>${avgOrderValue.toFixed(0)}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Top Subject</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 4px' }}>{topSubject}</div>
                 </div>
               </div>
             </div>
