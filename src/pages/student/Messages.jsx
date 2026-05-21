@@ -768,7 +768,7 @@ function Messages() {
                                     Choose a plan
                                   </div>
                                 )}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${plans.length}, 1fr)`, gap: 6 }}>
                                   {plans.map(p => {
                                     const { label, amt } = planLabel(p)
                                     return (
@@ -776,16 +776,16 @@ function Messages() {
                                         key={p}
                                         to={`/dashboard/checkout?orderId=${orderId}&plan=${p}`}
                                         style={{
-                                          display: 'inline-flex', flexDirection: 'column', alignItems: 'center',
-                                          padding: '7px 14px', borderRadius: 8,
+                                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                          padding: '10px 8px', borderRadius: 8,
                                           background: '#16A34A',
                                           color: 'white', textDecoration: 'none',
                                           fontWeight: 700, fontSize: 12,
-                                          whiteSpace: 'nowrap', lineHeight: 1.3
+                                          lineHeight: 1.3, textAlign: 'center'
                                         }}
                                       >
                                         <span>{label}</span>
-                                        <span style={{ fontSize: 10, fontWeight: 500, opacity: 0.8 }}>${amt.toFixed(2)}</span>
+                                        <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, marginTop: 1 }}>${amt.toFixed(2)}</span>
                                       </Link>
                                     )
                                   })}
