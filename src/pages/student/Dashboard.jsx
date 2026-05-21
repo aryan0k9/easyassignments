@@ -48,26 +48,38 @@ function Dashboard() {
     .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
     .slice(0, 3)
 
+  const CHART_COLORS = ['#7c3aed','#2563eb','#0891b2','#16a34a','#d97706','#dc2626','#db2777','#f97316','#84cc16','#8b5cf6']
   const paidOrders = orders.filter(o => (o.paid_amount || 0) > 0)
   const totalSpent = paidOrders.reduce((sum, o) => sum + (o.paid_amount || 0), 0)
   const avgOrderValue = paidOrders.length > 0 ? totalSpent / paidOrders.length : 0
-  const subjectCounts = {}
-  paidOrders.forEach(o => { if (o.subject) subjectCounts[o.subject] = (subjectCounts[o.subject] || 0) + 1 })
-  const topSubject = Object.entries(subjectCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A'
-  const now = new Date()
-  const monthlyData = Array.from({ length: 6 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
-    const month = d.toLocaleString('en-US', { month: 'short' })
-    const amount = Math.round(paidOrders
-      .filter(o => {
-        const date = new Date(o.updated_at || o.created_at)
-        return date.getFullYear() === d.getFullYear() && date.getMonth() === d.getMonth()
-      })
-      .reduce((sum, o) => sum + (o.paid_amount || 0), 0) * 100) / 100
-    return { month, amount }
+  const hasSpendingData = totalSpent > 0
+
+  const subjectBreakdown = Object.entries(
+    paidOrders.reduce((acc, o) => {
+      const s = o.subject || 'Other'
+      if (!acc[s]) acc[s] = { amount: 0, count: 0 }
+      acc[s].amount = Math.round((acc[s].amount + (o.paid_amount || 0)) * 100) / 100
+      acc[s].count += 1
+      return acc
+    }, {})
+  ).sort((a, b) => b[1].amount - a[1].amount)
+   .map(([subject, d], i) => ({
+     subject, amount: d.amount, count: d.count,
+     color: CHART_COLORS[i % CHART_COLORS.length],
+     pct: totalSpent > 0 ? Math.round((d.amount / totalSpent) * 100) : 0
+   }))
+
+  // Donut chart geometry
+  const R = 62, SW = 22, CX = 90, CY = 90
+  const CIRC = 2 * Math.PI * R
+  const GAP = subjectBreakdown.length > 1 ? 3 : 0
+  let cumLen = 0
+  const donutSegments = subjectBreakdown.map(item => {
+    const segLen = Math.max((item.amount / totalSpent) * CIRC - GAP, 0)
+    const offset = -cumLen
+    cumLen += segLen + GAP
+    return { ...item, segLen, offset }
   })
-  const maxSpend = Math.max(...monthlyData.map(m => m.amount), 1)
-  const hasSpendingData = monthlyData.some(m => m.amount > 0)
 
   const formatDate = (date) => new Date(date).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric'
@@ -313,71 +325,68 @@ function Dashboard() {
       <div className="sp-dash-bottom-grid">
         <div className="sp-card" style={{ overflow: 'hidden' }}>
           {/* Header */}
-          <div style={{ padding: '20px 24px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Finance</div>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>Spending Insights</h3>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Spent</div>
-              <div style={{ fontSize: '26px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.5px', lineHeight: 1.1 }}>${totalSpent.toFixed(2)}</div>
-            </div>
+          <div style={{ padding: '20px 24px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9' }}>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>📊 Spending Insights</h3>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+              Total: <strong style={{ color: '#16a34a' }}>${totalSpent.toFixed(2)}</strong>
+            </span>
           </div>
 
           {!hasSpendingData ? (
             <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '16px', background: 'linear-gradient(135deg,#dcfce7,#bbf7d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, margin: '0 auto 16px' }}>📊</div>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
               <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>No spending data yet</h4>
               <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>Make your first payment to see insights here.</p>
             </div>
           ) : (
-            <div style={{ padding: '24px 24px 0' }}>
-              {/* Bar chart */}
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '10px', height: '120px', marginBottom: '8px' }}>
-                {monthlyData.map((m, i) => {
-                  const pct = m.amount > 0 ? Math.max((m.amount / maxSpend) * 100, 8) : 0
-                  const isMax = m.amount === maxSpend && m.amount > 0
-                  return (
-                    <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', height: '100%', justifyContent: 'flex-end' }}>
-                      {m.amount > 0 && (
-                        <span style={{ fontSize: '10px', fontWeight: 700, color: isMax ? '#16a34a' : '#64748b' }}>${m.amount}</span>
-                      )}
-                      <div style={{
-                        width: '100%',
-                        height: m.amount > 0 ? `${pct}%` : '3px',
-                        borderRadius: m.amount > 0 ? '6px 6px 4px 4px' : '2px',
-                        background: m.amount > 0
-                          ? isMax
-                            ? 'linear-gradient(180deg, #16a34a 0%, #15803d 100%)'
-                            : 'linear-gradient(180deg, #4ade80 0%, #22c55e 100%)'
-                          : '#e2e8f0',
-                        boxShadow: isMax ? '0 4px 12px rgba(22,163,74,0.35)' : 'none',
-                        transition: 'height 0.4s ease',
-                      }} />
-                    </div>
-                  )
-                })}
-              </div>
-              {/* Month labels */}
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-                {monthlyData.map((m, i) => (
-                  <div key={i} style={{ flex: 1, textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#94a3b8' }}>{m.month}</div>
-                ))}
+            <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 0 }}>
+              {/* Donut chart */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 8px 20px 16px' }}>
+                <svg width="180" height="180" viewBox="0 0 180 180">
+                  {/* Background ring */}
+                  <circle cx={CX} cy={CY} r={R} fill="none" stroke="#f1f5f9" strokeWidth={SW} />
+                  {/* Segments */}
+                  {donutSegments.map((seg, i) => (
+                    <circle key={i} cx={CX} cy={CY} r={R} fill="none"
+                      stroke={seg.color} strokeWidth={SW}
+                      strokeDasharray={`${seg.segLen} ${CIRC - seg.segLen}`}
+                      strokeDashoffset={seg.offset}
+                      style={{ transform: 'rotate(-90deg)', transformOrigin: `${CX}px ${CY}px` }}
+                      strokeLinecap="butt"
+                    />
+                  ))}
+                  {/* Center text */}
+                  <text x={CX} y={CY - 10} textAnchor="middle" fontSize="11" fontWeight="600" fill="#94a3b8">Money spent</text>
+                  <text x={CX} y={CY + 12} textAnchor="middle" fontSize="19" fontWeight="800" fill="#0f172a">${totalSpent.toFixed(0)}</text>
+                  <text x={CX} y={CY + 28} textAnchor="middle" fontSize="11" fill="#16a34a" fontWeight="700">{paidOrders.length} order{paidOrders.length !== 1 ? 's' : ''}</text>
+                </svg>
+                {/* Avg */}
+                <div style={{ textAlign: 'center', marginTop: 4 }}>
+                  <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Avg per order</div>
+                  <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>${avgOrderValue.toFixed(2)}</div>
+                </div>
               </div>
 
-              {/* Stats row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderTop: '1px solid #f1f5f9', paddingTop: '16px', paddingBottom: '20px' }}>
-                <div style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Orders Paid</div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a' }}>{paidOrders.length}</div>
+              {/* Breakdown list */}
+              <div style={{ borderLeft: '1px solid #f1f5f9', overflow: 'hidden' }}>
+                <div style={{ padding: '12px 16px 8px', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                  Spending breakdown
                 </div>
-                <div style={{ textAlign: 'center', borderRight: '1px solid #f1f5f9' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Avg Value</div>
-                  <div style={{ fontSize: '20px', fontWeight: 800, color: '#16a34a' }}>${avgOrderValue.toFixed(0)}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Top Subject</div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 4px' }}>{topSubject}</div>
+                <div style={{ overflowY: 'auto', maxHeight: '240px' }}>
+                  {subjectBreakdown.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 16px', borderBottom: '1px solid #f8fafc' }}>
+                      {/* Color dot */}
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.subject}</div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: 1 }}>{item.count} order{item.count !== 1 ? 's' : ''}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>${item.amount.toFixed(2)}</div>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: item.color }}>{item.pct}%</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
