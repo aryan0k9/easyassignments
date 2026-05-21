@@ -140,10 +140,10 @@ function Messages() {
 
       const orderIds = deduped.filter(s => s.order_id).map(s => s.order_id)
       if (orderIds.length > 0) {
-        const { data: orders } = await supabase.from('orders').select('id, order_number, subject').in('id', orderIds)
+        const { data: orders } = await supabase.from('orders').select('id, order_number, subject, allowed_payment_plans').in('id', orderIds)
         if (orders) {
           const map = {}
-          orders.forEach(o => { map[o.id] = { number: o.order_number, subject: o.subject } })
+          orders.forEach(o => { map[o.id] = { number: o.order_number, subject: o.subject, plans: o.allowed_payment_plans } })
           setOrderNumbers(map)
         }
       }
@@ -735,11 +735,17 @@ function Messages() {
 
                           {/* Payment plan buttons */}
                           {msg.sender_type === 'admin' && msg.message.includes('PAYMENT REQUEST') && (() => {
-                            const amtMatch  = msg.message.match(/Amount Due:\s*\$([0-9]+(?:\.[0-9]+)?)/)
-                            const plansMatch = msg.message.match(/Plans:\s*([^\n]+)/)
-                            const baseAmt   = amtMatch  ? parseFloat(amtMatch[1])  : 0
-                            const plans     = plansMatch ? plansMatch[1].trim().split(',').map(s => s.trim()).filter(Boolean) : []
-                            const orderId   = activeSession.order_id
+                            const amtMatch   = msg.message.match(/Amount Due:\s*\$([0-9]+(?:\.[0-9]+)?)/)
+                            const plansMatch = msg.message.match(/Plans:\s*([^\r\n]+)/)
+                            const baseAmt    = amtMatch ? parseFloat(amtMatch[1]) : 0
+                            const orderId    = activeSession.order_id
+                            // Primary: read from order record (works for all messages old & new)
+                            // Fallback: parse from message text (new format only)
+                            const orderPlansRaw = orderNumbers?.[orderId]?.plans || ''
+                            const plans = (orderPlansRaw
+                              ? orderPlansRaw.split(',').map(s => s.trim()).filter(Boolean)
+                              : plansMatch ? plansMatch[1].trim().split(',').map(s => s.trim()).filter(Boolean) : []
+                            )
 
                             const planLabel = (p) => {
                               if (p === 'full')      return { label: 'Full Payment', icon: '⚡', amt: baseAmt }
