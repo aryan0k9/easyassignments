@@ -982,6 +982,8 @@ function ReworkModal({ isOpen, onClose, order }) {
       const msgText = `[REWORK_REQ] ${JSON.stringify({ description, files: fileTags })}`
       await supabase.from('chat_messages').insert({ session_id: sessionId, sender_type: 'visitor', sender_name: user.user_metadata?.full_name || 'Student', message: msgText })
       await supabase.from('chat_sessions').update({ last_message: '🚨 REWORK REQUEST 🚨', unread_count: 1, status: 'active', updated_at: new Date().toISOString() }).eq('id', sessionId)
+      // Auto-set order back to Active so admin knows work must resume
+      await supabase.from('orders').update({ status: 'active' }).eq('id', order.id)
       setSuccess(true)
     } catch (err) { alert('Error: ' + err.message) }
     finally { setSubmitting(false) }
