@@ -733,24 +733,75 @@ function Messages() {
                         }}>
                           {renderMessageText(msg.message)}
 
-                          {/* Payment CTA button */}
-                          {msg.sender_type === 'admin' && msg.message.includes('PAYMENT REQUEST') && (
-                            <div style={{ marginTop: '14px' }}>
-                              <Link
-                                to={`/dashboard/payments?orderId=${activeSession.order_id}`}
-                                style={{
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                                  padding: '11px 20px',
-                                  background: 'linear-gradient(135deg, #16A34A, #15803d)',
-                                  color: 'white', borderRadius: '10px', textDecoration: 'none',
-                                  fontWeight: 700, fontSize: '14px',
-                                  boxShadow: '0 4px 12px rgba(22,163,74,0.35)'
-                                }}
-                              >
-                                💳 Pay Now →
-                              </Link>
-                            </div>
-                          )}
+                          {/* Payment plan buttons */}
+                          {msg.sender_type === 'admin' && msg.message.includes('PAYMENT REQUEST') && (() => {
+                            const amtMatch  = msg.message.match(/Amount Due:\s*\$([0-9]+(?:\.[0-9]+)?)/)
+                            const plansMatch = msg.message.match(/Plans:\s*([^\n]+)/)
+                            const baseAmt   = amtMatch  ? parseFloat(amtMatch[1])  : 0
+                            const plans     = plansMatch ? plansMatch[1].trim().split(',').map(s => s.trim()).filter(Boolean) : []
+                            const orderId   = activeSession.order_id
+
+                            const planLabel = (p) => {
+                              if (p === 'full')      return { label: 'Full Payment', icon: '⚡', amt: baseAmt }
+                              if (p === 'splithalf') return { label: 'Half (50%)',   icon: '✂️', amt: Math.round(baseAmt * 0.5 * 100) / 100 }
+                              const m = p.match(/^(weekly|biweekly)(\d+)$/)
+                              if (m) {
+                                const n = parseInt(m[2], 10)
+                                const inst = Math.round((baseAmt / n) * 100) / 100
+                                return m[1] === 'biweekly'
+                                  ? { label: `Bi-weekly (${n} parts)`, icon: '📅', amt: inst }
+                                  : { label: `Weekly (${n} parts)`,    icon: '🗓️', amt: inst }
+                              }
+                              return { label: p, icon: '💳', amt: baseAmt }
+                            }
+
+                            return (
+                              <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {plans.length > 0 && (
+                                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>
+                                    Choose a plan
+                                  </div>
+                                )}
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                  {plans.map(p => {
+                                    const { label, icon, amt } = planLabel(p)
+                                    return (
+                                      <Link
+                                        key={p}
+                                        to={`/dashboard/checkout?orderId=${orderId}&plan=${p}`}
+                                        style={{
+                                          display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                          padding: '10px 16px', borderRadius: 10,
+                                          background: 'linear-gradient(135deg, #16A34A, #15803d)',
+                                          color: 'white', textDecoration: 'none',
+                                          fontWeight: 700, fontSize: 13, flex: '1 1 120px',
+                                          boxShadow: '0 3px 10px rgba(22,163,74,0.3)', textAlign: 'center'
+                                        }}
+                                      >
+                                        <span style={{ fontSize: 16, marginBottom: 2 }}>{icon}</span>
+                                        <span>{label}</span>
+                                        <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.85, marginTop: 2 }}>
+                                          ${amt.toFixed(2)} first
+                                        </span>
+                                      </Link>
+                                    )
+                                  })}
+                                </div>
+                                <Link
+                                  to={`/dashboard/payments?orderId=${orderId}`}
+                                  style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                                    padding: '10px 16px', borderRadius: 10,
+                                    background: '#f1f5f9', color: '#374151',
+                                    textDecoration: 'none', fontWeight: 600, fontSize: 13,
+                                    border: '1.5px solid #e2e8f0'
+                                  }}
+                                >
+                                  💳 Payment Dashboard
+                                </Link>
+                              </div>
+                            )
+                          })()}
                         </div>
                         <div style={{ fontSize: '11px', color: '#9ca3af', padding: '2px 4px', textAlign: msg.sender_type === 'visitor' ? 'right' : 'left' }}>
                           {msg.sender_type === 'admin' ? 'Support' : 'You'} · {new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
