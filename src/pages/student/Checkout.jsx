@@ -78,8 +78,8 @@ export default function Checkout() {
   // Bonus (website-provided) is deducted FIRST, always even when topup
   // covers the full order. That way admin/welcome credits are always consumed.
   // Topup (user-recharged via Stripe) covers whatever remains.
-  const bonusCap    = round2(bonusBalance * BONUS_CAP_PCT)  // 5% of bonus balance
-  const fromBonus   = useWallet ? Math.min(bonusCap, total) : 0
+  const bonusCap    = round2(subtotalAfterPromo * BONUS_CAP_PCT)  // 5% of order subtotal
+  const fromBonus   = useWallet ? Math.min(bonusCap, bonusBalance, total) : 0
   const fromTopup   = useWallet ? Math.min(topupBalance, Math.max(0, round2(total - fromBonus))) : 0
   const walletApplied = round2(fromBonus + fromTopup)
   const chargeAmount  = Math.max(0, round2(total - walletApplied))
@@ -514,7 +514,7 @@ export default function Checkout() {
                       )}
                       {fromBonus > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 700, color: '#16a34a' }}>Bonus credit (5% of ${bonusBalance.toFixed(2)} USD)</span>
+                          <span style={{ fontWeight: 700, color: '#16a34a' }}>Bonus credit (5% of ${subtotalAfterPromo.toFixed(2)} USD)</span>
                           <span style={{ fontWeight: 700, color: '#0f172a' }}>−${fromBonus.toFixed(2)} USD</span>
                         </div>
                       )}
